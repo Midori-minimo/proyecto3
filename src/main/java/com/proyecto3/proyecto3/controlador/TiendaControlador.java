@@ -21,6 +21,8 @@ public class TiendaControlador {
     @GetMapping({"", "inicio"})
     public String listarProductos(Model modelo) {
         List<Producto> productos = productoRepositorio.findAll();
+        System.out.println("DEBUG >> Productos encontrados: " + productos.size());
+        productos.forEach(p -> System.out.println("DEBUG >> " + p.getNombre() + " - " + p.getId()));
         modelo.addAttribute("productos", productos);
         modelo.addAttribute("productoNuevo", new Producto());
         return "index";
