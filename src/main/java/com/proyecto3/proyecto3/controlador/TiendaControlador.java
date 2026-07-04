@@ -3,6 +3,7 @@ package com.proyecto3.proyecto3.controlador;
 import com.proyecto3.proyecto3.modelo.Producto;
 import com.proyecto3.proyecto3.repositorio.ProductoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +19,17 @@ public class TiendaControlador {
     @Autowired
     private ProductoRepositorio productoRepositorio;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     @GetMapping({"", "inicio"})
     public String listarProductos(Model modelo) {
+        System.out.println("DEBUG >> Base de datos conectada: " + mongoTemplate.getDb().getName());
+        System.out.println("DEBUG >> Colecciones disponibles: " + mongoTemplate.getCollectionNames());
+        System.out.println("DEBUG >> Documentos en 'producto' (via driver crudo): " + mongoTemplate.getCollection("producto").countDocuments());
+
         List<Producto> productos = productoRepositorio.findAll();
-        System.out.println("DEBUG >> Productos encontrados: " + productos.size());
-        productos.forEach(p -> System.out.println("DEBUG >> " + p.getNombre() + " - " + p.getId()));
+        System.out.println("DEBUG >> Productos encontrados (via repositorio): " + productos.size());
         modelo.addAttribute("productos", productos);
         modelo.addAttribute("productoNuevo", new Producto());
         return "index";
