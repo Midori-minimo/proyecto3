@@ -28,9 +28,9 @@ public class TiendaControlador {
         System.out.println("DEBUG >> Colecciones disponibles: " + mongoTemplate.getCollectionNames());
         System.out.println("DEBUG >> Documentos en 'producto' (via driver crudo): " + mongoTemplate.getCollection("producto").countDocuments());
 
-        List<Producto> productos = productoRepositorio.findAll();
-        System.out.println("DEBUG >> Productos encontrados (via repositorio): " + productos.size());
-        modelo.addAttribute("productos", productos);
+        List<Producto> producto = productoRepositorio.findAll();
+        System.out.println("DEBUG >> Productos encontrados (via repositorio): " + producto.size());
+        modelo.addAttribute("productos", producto);
         modelo.addAttribute("productoNuevo", new Producto());
         return "index";
     }
