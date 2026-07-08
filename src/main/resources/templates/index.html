@@ -88,11 +88,6 @@
 </head>
 <body>
 
-<!-- ══════════════ DEBUG TEMPORAL ══════════════ -->
-<div class="alert alert-warning text-center m-0" style="font-family: monospace; font-size: 1.1rem;">
-    DEBUG → productos.size() = <span th:text="${productos.size()}">?</span>
-</div>
-
 <!-- ══════════════ NAVBAR ══════════════ -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top" id="inicio">
     <div class="container">
@@ -103,15 +98,39 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto gap-2">
+            <ul class="navbar-nav ms-auto gap-2 align-items-lg-center">
                 <li class="nav-item">
                     <a class="nav-link active" href="#inicio"><i class="bi bi-house-fill me-1"></i>Inicio</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#catalogo"><i class="bi bi-grid-fill me-1"></i>Nuestros Smartphones</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" th:if="${esAdmin}">
                     <a class="nav-link" href="#registro"><i class="bi bi-table me-1"></i>Registro</a>
+                </li>
+
+                <!-- ── Sesión no iniciada ── -->
+                <li class="nav-item" th:unless="${estaLogueado}">
+                    <a class="nav-link" th:href="@{/login}"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión</a>
+                </li>
+                <li class="nav-item" th:unless="${estaLogueado}">
+                    <a class="btn btn-outline-light btn-sm" th:href="@{/registro}">
+                        <i class="bi bi-person-plus me-1"></i>Registrarse
+                    </a>
+                </li>
+
+                <!-- ── Sesión iniciada ── -->
+                <li class="nav-item" th:if="${estaLogueado}">
+                    <span class="nav-link text-white-50">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <span th:text="${nombreUsuario}">Usuario</span>
+                        <span th:if="${esAdmin}" class="badge bg-primary ms-1">Admin</span>
+                    </span>
+                </li>
+                <li class="nav-item" th:if="${estaLogueado}">
+                    <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">
+                        <i class="bi bi-box-arrow-right me-1"></i>Salir
+                    </a>
                 </li>
             </ul>
         </div>
@@ -191,7 +210,8 @@
                          th:data-stock="${p.cantidad}"
                          th:data-fecha="${p.fecha}"
                          onclick="seleccionarProducto(this)">
-                        <img th:src="@{'/img/' + ${p.imagenUrl}}" class="card-img-top" th:alt="${p.nombre}"/>
+                        <img th:src="${#strings.startsWith(p.imagenUrl, 'http')} ? ${p.imagenUrl} : @{'/img/' + ${p.imagenUrl}}"
+                             class="card-img-top" th:alt="${p.nombre}"/>
                         <div class="card-body d-flex flex-column">
                             <h6 class="card-title fw-bold mb-1" th:text="${p.nombre}">Nombre</h6>
                             <p class="card-text text-muted small flex-grow-1" th:text="${p.descripcion}">Descripción</p>
@@ -288,8 +308,8 @@
     </div>
 </div>
 
-<!-- ══════════════ TABLA DE REGISTRO ══════════════ -->
-<div class="container mb-5" id="registro">
+<!-- ══════════════ TABLA DE REGISTRO (solo administradores) ══════════════ -->
+<div class="container mb-5" id="registro" th:if="${esAdmin}">
     <h2 class="section-title mb-4">Registro de Productos</h2>
     <div class="table-responsive shadow-sm rounded">
         <table class="table table-hover table-bordered tabla-registro mb-0 align-middle">
@@ -410,11 +430,9 @@
                                   rows="3" placeholder="Características principales..."></textarea>
                     </div>
                     <div class="mb-1">
-                        <label for="imagenUrl" class="form-label fw-semibold">
-                            Imagen <small class="text-muted">(phone1.jpg / phone2.jpg / phone3.jpg)</small>
-                        </label>
-                        <input type="text" class="form-control" id="imagenUrl" name="imagenUrl"
-                               placeholder="Dejar vacío para imagen por defecto"/>
+                        <div class="alert alert-light border small mb-0 py-2">
+                            <i class="bi bi-image me-1"></i>La imagen se genera automáticamente según el nombre del producto.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
