@@ -48,12 +48,15 @@ public class MigrationImagenesProductos implements CommandLineRunner {
         System.out.println("DEBUG >> === Migración de imágenes finalizada ===");
     }
 
+    /**
+     * Decide si una URL de imagen debe ser recalculada.
+     */
     private boolean debeActualizar(String urlActual, String nuevaUrl) {
         // 1. URL vacía o null → actualizar
         if (urlActual == null || urlActual.isBlank()) {
             return true;
         }
-        // 2. URL contiene "placehold.co" → actualizar (placeholder antiguo)
+        // 2. URL contiene "placehold.co" → actualizar
         if (urlActual.contains("placehold.co")) {
             return true;
         }
@@ -62,7 +65,6 @@ public class MigrationImagenesProductos implements CommandLineRunner {
             return false;
         }
         // 4. URL local que apunta a /img/productos/<archivo> → respetar
-        //    (el admin la seteó manualmente o ya estaba migrada)
         if (urlActual.startsWith("/img/productos/")) {
             if (nuevaUrl.startsWith("/img/productos/")) {
                 return !urlActual.equals(nuevaUrl);

@@ -79,6 +79,7 @@ public class TiendaControlador {
         }
         return "redirect:/inicio";
     }
+
     @PostMapping("/agregar")
     public String agregarProducto(@ModelAttribute Producto producto,
                                   @RequestParam(value = "imagenUrl", required = false) String imagenUrl,
@@ -144,22 +145,21 @@ public class TiendaControlador {
         String colorFondo;
 
         if (nombreLower.contains("iphone")) {
-            colorFondo = "1d1d1f/ffffff"; // negro Apple
+            colorFondo = "1d1d1f/ffffff"; // Apple
         } else if (nombreLower.contains("samsung")) {
-            colorFondo = "1428a0/ffffff"; // azul Samsung
+            colorFondo = "1428a0/ffffff"; // Samsung
         } else if (nombreLower.contains("xiaomi")) {
-            colorFondo = "ff6900/ffffff"; // naranja Xiaomi
+            colorFondo = "ff6900/ffffff"; // Xiaomi
         } else if (nombreLower.contains("huawei")) {
             colorFondo = "cf0a2c/ffffff"; // rojo Huawei
         } else {
-            colorFondo = "0d6efd/ffffff"; // azul genérico de la tienda
+            colorFondo = "0d6efd/ffffff"; // tienda
         }
 
         String textoCodificado = URLEncoder.encode(nombre, StandardCharsets.UTF_8);
         return "https://placehold.co/500x500/" + colorFondo + "?text=" + textoCodificado + "&font=roboto";
     }
 
-    /** Normaliza un nombre para comparar: minúsculas, sin tildes, sin espacios extra. */
     private static String normalizar(String texto) {
         if (texto == null) return "";
         String t = java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD)
@@ -167,19 +167,16 @@ public class TiendaControlador {
         return t.toLowerCase().trim().replaceAll("\\s+", " ");
     }
 
-    /** true si hay una sesión activa con rol ADMIN */
     private boolean esAdmin(HttpSession sesion) {
         Object rol = sesion.getAttribute("usuarioRol");
         return "ADMIN".equals(rol);
     }
 
-    /** true si hay una sesión iniciada (cualquier rol: CLIENTE o ADMIN) */
     private boolean esLogueado(HttpSession sesion) {
         Object rol = sesion.getAttribute("usuarioRol");
         return rol != null;
     }
 
-    /** Agrega al modelo los datos de sesión que la vista necesita para mostrar/ocultar secciones */
     private void agregarDatosDeSesion(Model modelo, HttpSession sesion) {
         Object rol = sesion.getAttribute("usuarioRol");
         Object nombre = sesion.getAttribute("usuarioNombre");

@@ -178,8 +178,6 @@ public class AuthControlador {
             return "recuperar-password";
         }
 
-        // El correo existe → ir al paso 2.
-        // Usamos redirect para evitar reenvíos del formulario al refrescar.
         String url = "/recuperar-password?paso=2&email="
                 + URLEncoder.encode(emailNorm, StandardCharsets.UTF_8);
         return "redirect:" + url;
