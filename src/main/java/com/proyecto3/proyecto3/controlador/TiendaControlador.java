@@ -61,12 +61,17 @@ public class TiendaControlador {
     @PostMapping("/comprar")
     public String comprarProducto(@RequestParam("productoId") String id) {
         Optional<Producto> opcional = productoRepositorio.findById(id);
+        boolean comprado = false;
         if (opcional.isPresent()) {
             Producto producto = opcional.get();
             if (producto.getCantidad() > 0) {
                 producto.setCantidad(producto.getCantidad() - 1);
                 productoRepositorio.save(producto);
+                comprado = true;
             }
+        }
+        if (comprado) {
+            return "redirect:/inicio?compra=confirmada";
         }
         return "redirect:/inicio";
     }

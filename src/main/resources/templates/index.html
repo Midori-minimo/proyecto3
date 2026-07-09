@@ -69,6 +69,61 @@
             min-width: 300px;
         }
         #panelBoleta.visible { display: block; }
+        /* Estado bloqueado de la boleta: hasta que se confirme la compra */
+        #panelBoleta.bloqueada .boleta-body { filter: blur(2px); opacity: .55; pointer-events: none; user-select: none; }
+        #boletaOverlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,.78);
+            backdrop-filter: blur(2px);
+            z-index: 5;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.5rem;
+            flex-direction: column;
+            gap: .75rem;
+        }
+        #panelBoleta.bloqueada #boletaOverlay { display: flex; }
+        #boletaOverlay .overlay-icon {
+            font-size: 2.6rem;
+            color: #0d6efd;
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+        #boletaOverlay .overlay-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        #boletaOverlay .overlay-text {
+            font-size: .9rem;
+            color: #495057;
+            line-height: 1.4;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%      { transform: scale(1.12); opacity: .8; }
+        }
+        /* Botón de descarga deshabilitado */
+        #btnDescargarBoleta:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+        /* Etiqueta de estado (Pendiente / Compra confirmada) */
+        .boleta-estado {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .25rem .7rem;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+        }
+        .boleta-estado.pendiente { background: #fff3cd; color: #664d03; }
+        .boleta-estado.confirmada { background: #d1e7dd; color: #0f5132; }
         .boleta-header {
             background: linear-gradient(135deg, #0d6efd, #6610f2);
             color: #fff;
@@ -221,14 +276,14 @@
                                 <span class="badge bg-success badge-stock" th:text="'Stock: ' + ${p.cantidad}">Stock</span>
                             </div>
                         </div>
-                        <div class="card-footer bg-white border-0 pb-3" onclick="event.stopPropagation()">
+                        <div class="card-footer bg-white border-0 pb-3">
                             <button class="btn btn-primary w-100 btn-comprar"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalCompra"
+                                    type="button"
                                     th:data-id="${p.id}"
                                     th:data-nombre="${p.nombre}"
                                     th:data-precio="${p.precio}"
-                                    th:disabled="${p.cantidad == 0}">
+                                    th:disabled="${p.cantidad == 0}"
+                                    onclick="event.stopPropagation(); seleccionarProducto(this.closest('.card-producto'));">
                                 <i class="bi bi-cart-plus me-1"></i>
                                 <span th:text="${p.cantidad == 0} ? 'Sin stock' : 'Comprar'">Comprar</span>
                             </button>
@@ -242,9 +297,14 @@
         </div>
 
         <!-- Panel boleta de venta -->
-        <div id="panelBoleta">
+        <div id="panelBoleta" class="bloqueada">
             <div class="boleta-header">
-                <div class="boleta-logo"><i class="bi bi-phone-fill me-2"></i>Smartphones Store</div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="boleta-logo"><i class="bi bi-phone-fill me-2"></i>Smartphones Store</div>
+                    <span class="boleta-estado pendiente" id="boletaEstado">
+                        <i class="bi bi-clock-fill"></i><span id="boletaEstadoTexto">Pendiente</span>
+                    </span>
+                </div>
                 <div class="boleta-ruc">RUC: 20123456789 &nbsp;|&nbsp; Lima, Perú</div>
                 <div class="boleta-ruc mt-1">BOLETA DE VENTA ELECTRÓNICA</div>
             </div>
@@ -301,9 +361,20 @@
                 <div class="mt-3 text-center text-muted" style="font-size:.78rem;">
                     Gracias por su compra &nbsp;✦&nbsp; Válido como comprobante de pago
                 </div>
-                <button class="btn btn-success w-100 mt-3" onclick="descargarBoletaPDF()">
+                <button class="btn btn-success w-100 mt-3" id="btnDescargarBoleta" disabled
+                        onclick="descargarBoletaPDF()">
                     <i class="bi bi-file-earmark-pdf me-2"></i>Descargar Boleta PDF
                 </button>
+            </div>
+
+            <!-- Overlay que bloquea la boleta hasta que se confirme la compra -->
+            <div id="boletaOverlay">
+                <div class="overlay-icon"><i class="bi bi-lock-fill"></i></div>
+                <div class="overlay-title">Boleta bloqueada</div>
+                <div class="overlay-text">
+                    Primero confirma tu compra en la ventana emergente
+                    para poder descargar la boleta en PDF.
+                </div>
             </div>
         </div>
     </div>
@@ -491,13 +562,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ── Datos del producto seleccionado actualmente en boleta ──
     let productoSeleccionado = null;
+    let compraConfirmada = false;
 
-    // ── Modal compra ──
+    const SS_KEY = 'ultimoProductoComprado';
+    const panelBoleta = document.getElementById('panelBoleta');
+    const btnDescargar = document.getElementById('btnDescargarBoleta');
+    const estadoBadge  = document.getElementById('boletaEstado');
+    const estadoTexto  = document.getElementById('boletaEstadoTexto');
+
+    // ── Modal compra: cuando se abre, copia datos del botón al formulario ──
     const modalCompra = document.getElementById('modalCompra');
     modalCompra.addEventListener('show.bs.modal', function (evento) {
         const boton = evento.relatedTarget;
+        if (!boton) return;
         document.getElementById('inputProductoId').value = boton.getAttribute('data-id');
         document.getElementById('nombreProductoModal').textContent = boton.getAttribute('data-nombre');
         document.getElementById('precioProductoModal').textContent =
@@ -540,53 +618,133 @@
         cerrarBoleta();
     }
 
-    // ── Seleccionar producto → mostrar boleta ──
+    // ── Llenar la boleta con los datos de un producto ──
+    function llenarBoleta(p) {
+        const precio = parseFloat(p.precio);
+        const subtotal = precio / 1.18;
+        const igv      = precio - subtotal;
+        const nBoleta  = 'B001-' + String(Math.floor(Math.abs(Math.sin(precio * 1000)) * 99999)).padStart(5, '0');
+        const hoy = new Date();
+        const fechaStr = hoy.toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+        document.getElementById('boletaNumero').textContent     = nBoleta;
+        document.getElementById('boletaFecha').textContent      = fechaStr;
+        document.getElementById('boletaNombre').textContent     = p.nombre;
+        document.getElementById('boletaDesc').textContent       = p.desc || '—';
+        document.getElementById('boletaStock').textContent      = p.stock + ' unidades';
+        document.getElementById('boletaPrecioUnit').textContent = 'S/. ' + precio.toFixed(2);
+        document.getElementById('boletaSubtotal').textContent   = 'S/. ' + subtotal.toFixed(2);
+        document.getElementById('boletaIgv').textContent        = 'S/. ' + igv.toFixed(2);
+        document.getElementById('boletaTotal').textContent      = 'S/. ' + precio.toFixed(2);
+    }
+
+    // ── Bloquear / desbloquear la boleta ──
+    function bloquearBoleta() {
+        panelBoleta.classList.add('bloqueada');
+        btnDescargar.disabled = true;
+        estadoBadge.classList.remove('confirmada');
+        estadoBadge.classList.add('pendiente');
+        estadoBadge.querySelector('i').className = 'bi bi-clock-fill';
+        estadoTexto.textContent = 'Pendiente';
+    }
+    function desbloquearBoleta() {
+        panelBoleta.classList.remove('bloqueada');
+        btnDescargar.disabled = false;
+        estadoBadge.classList.remove('pendiente');
+        estadoBadge.classList.add('confirmada');
+        estadoBadge.querySelector('i').className = 'bi bi-check-circle-fill';
+        estadoTexto.textContent = 'Compra confirmada';
+    }
+
     function seleccionarProducto(card) {
         // Quitar selección anterior
         document.querySelectorAll('.card-producto').forEach(c => c.classList.remove('seleccionada'));
         card.classList.add('seleccionada');
 
-        const nombre    = card.getAttribute('data-nombre');
-        const precio    = parseFloat(card.getAttribute('data-precio'));
-        const desc      = card.getAttribute('data-descripcion');
-        const stock     = card.getAttribute('data-stock');
-        const fecha     = card.getAttribute('data-fecha');
+        const nombre = card.getAttribute('data-nombre');
+        const precio = card.getAttribute('data-precio');
+        const desc   = card.getAttribute('data-descripcion');
+        const stock  = card.getAttribute('data-stock');
+        const fecha  = card.getAttribute('data-fecha');
+        const id     = card.getAttribute('data-id');
 
-        productoSeleccionado = { nombre, precio, desc, stock, fecha };
+        productoSeleccionado = { id, nombre, precio, desc, stock, fecha };
+        compraConfirmada = false;
 
-        // Calcular impuestos
-        const subtotal = precio / 1.18;
-        const igv      = precio - subtotal;
+        // Llenar la boleta con los datos y mostrarla BLOQUEADA
+        llenarBoleta(productoSeleccionado);
+        panelBoleta.classList.add('visible');
+        bloquearBoleta();
 
-        // Número de boleta pseudo-aleatorio reproducible
-        const nBoleta  = 'B001-' + String(Math.floor(Math.abs(Math.sin(precio * 1000)) * 99999)).padStart(5, '0');
-
-        // Fecha actual
-        const hoy = new Date();
-        const fechaStr = hoy.toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' });
-
-        document.getElementById('boletaNumero').textContent   = nBoleta;
-        document.getElementById('boletaFecha').textContent    = fechaStr;
-        document.getElementById('boletaNombre').textContent   = nombre;
-        document.getElementById('boletaDesc').textContent     = desc || '—';
-        document.getElementById('boletaStock').textContent    = stock + ' unidades';
-        document.getElementById('boletaPrecioUnit').textContent = 'S/. ' + precio.toFixed(2);
-        document.getElementById('boletaSubtotal').textContent  = 'S/. ' + subtotal.toFixed(2);
-        document.getElementById('boletaIgv').textContent       = 'S/. ' + igv.toFixed(2);
-        document.getElementById('boletaTotal').textContent     = 'S/. ' + precio.toFixed(2);
-
-        document.getElementById('panelBoleta').classList.add('visible');
+        // Abrir el modal de confirmación de compra programáticamente.
+        // Usamos setTimeout(0) para asegurar que la boleta se renderice primero.
+        setTimeout(function() {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalCompra);
+            // Cargar datos en el modal manualmente (porque relatedTarget es null)
+            document.getElementById('inputProductoId').value = id;
+            document.getElementById('nombreProductoModal').textContent = nombre;
+            document.getElementById('precioProductoModal').textContent = 'S/. ' + parseFloat(precio).toFixed(2);
+            modal.show();
+        }, 0);
     }
 
     function cerrarBoleta() {
         document.querySelectorAll('.card-producto').forEach(c => c.classList.remove('seleccionada'));
-        document.getElementById('panelBoleta').classList.remove('visible');
+        panelBoleta.classList.remove('visible');
         productoSeleccionado = null;
+        compraConfirmada = false;
     }
 
-    // ── Descargar PDF con jsPDF ──
+    document.querySelector('#modalCompra form').addEventListener('submit', function() {
+        if (productoSeleccionado) {
+            try {
+                sessionStorage.setItem(SS_KEY, JSON.stringify(productoSeleccionado));
+            } catch (e) {
+                // sessionStorage puede fallar en modo privado; seguimos igual.
+                console.warn('No se pudo guardar en sessionStorage', e);
+            }
+        }
+    });
+
+    // ── Al cargar la página: ¿venimos de una compra confirmada? ──
+    (function inicializar() {
+        const params = new URLSearchParams(window.location.search);
+        const compraOk = params.get('compra') === 'confirmada';
+
+        if (compraOk) {
+            let guardado = null;
+            try { guardado = JSON.parse(sessionStorage.getItem(SS_KEY)); } catch (e) {}
+            if (guardado) {
+                productoSeleccionado = guardado;
+                compraConfirmada = true;
+                llenarBoleta(guardado);
+                panelBoleta.classList.add('visible');
+                desbloquearBoleta();
+
+                // Resaltar la tarjeta del producto comprado (si sigue existiendo)
+                document.querySelectorAll('.card-producto').forEach(function(c) {
+                    if (c.getAttribute('data-id') === guardado.id) {
+                        c.classList.add('seleccionada');
+                    }
+                });
+
+                // Scroll suave hasta el catálogo para que el usuario vea la boleta
+                document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth' });
+            }
+            // Limpiar la URL para que un F5 no vuelva a disparar la lógica
+            const nuevaUrl = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, nuevaUrl);
+        }
+    })();
+
+    // ── Descargar PDF con jsPDF (solo si la compra está confirmada) ──
     function descargarBoletaPDF() {
         if (!productoSeleccionado) return;
+        if (!compraConfirmada) {
+            // Doble verificación: si por algún motivo el botón no está disabled
+            alert('Primero debes confirmar tu compra para poder descargar la boleta.');
+            return;
+        }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: 'a5' });
 

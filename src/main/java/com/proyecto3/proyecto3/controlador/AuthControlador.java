@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @Controller
@@ -94,74 +96,93 @@ public class AuthControlador {
     }
 
     @GetMapping("/recuperar-password")
-    public String mostrarRecuperarPassword() {
+    public String mostrarRecuperarPassword(
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "paso", required = false) String paso,
+            Model modelo) {
+
+        // Si llegamos al paso 2 pero el email no existe en la BD, volvemos al paso 1.
+        if ("2".equals(paso)) {
+            String emailNorm = email == null ? "" : email.trim().toLowerCase();
+            if (emailNorm.isEmpty() || usuarioRepositorio.findByEmail(emailNorm).isEmpty()) {
+                modelo.addAttribute("error",
+                        "La cuenta ya no existe. Vuelve a iniciar el proceso de recuperación.");
+                return "redirect:/recuperar-password";
+            }
+            modelo.addAttribute("paso", 2);
+            modelo.addAttribute("email", emailNorm);
+            return "recuperar-password";
+        }
+
+        // Paso 1 por defecto
+        modelo.addAttribute("paso", 1);
         return "recuperar-password";
     }
 
     @PostMapping("/recuperar-password")
-    public String procesarRecuperarPassword(@RequestParam String email,
-                                            Model modelo) {
-        String emailNormalizado = email.trim().toLowerCase();
+    public String procesarRecuperarPassword(
+            @RequestParam(value = "paso", required = false) String paso,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "password", required = false) String password,
+            @RequestParam(value = "confirmarPassword", required = false) String confirmarPassword,
+            Model modelo) {
 
-        if (usuarioRepositorio.findByEmail(emailNormalizado).isEmpty()) {
-            modelo.addAttribute("error",
-                    "No encontramos una cuenta registrada con ese correo.");
-            modelo.addAttribute("emailIngresado", email);
+        // ── Paso 2: cambiar la contraseña ──
+        if ("2".equals(paso) && email != null && !email.isBlank()) {
+            String emailNorm = email.trim().toLowerCase();
+            Optional<Usuario> usuarioOpt = usuarioRepositorio.findByEmail(emailNorm);
+
+            if (usuarioOpt.isEmpty()) {
+                modelo.addAttribute("error",
+                        "La cuenta ya no existe. Vuelve a iniciar el proceso de recuperación.");
+                modelo.addAttribute("paso", 1);
+                return "recuperar-password";
+            }
+
+            if (password == null || !password.equals(confirmarPassword)) {
+                modelo.addAttribute("error", "Las contraseñas no coinciden.");
+                modelo.addAttribute("paso", 2);
+                modelo.addAttribute("email", emailNorm);
+                return "recuperar-password";
+            }
+
+            if (password.length() < 6) {
+                modelo.addAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
+                modelo.addAttribute("paso", 2);
+                modelo.addAttribute("email", emailNorm);
+                return "recuperar-password";
+            }
+
+            Usuario usuario = usuarioOpt.get();
+            String saltNuevo = PasswordUtil.generarSalt();
+            usuario.setSalt(saltNuevo);
+            usuario.setPasswordHash(PasswordUtil.hashPassword(password, saltNuevo));
+            usuarioRepositorio.save(usuario);
+
+            return "redirect:/login?recuperada";
+        }
+
+        // ── Paso 1: validar el correo ──
+        if (email == null || email.isBlank()) {
+            modelo.addAttribute("error", "Debes ingresar un correo.");
+            modelo.addAttribute("paso", 1);
             return "recuperar-password";
         }
 
-        // El correo sí existe: pasamos al formulario de nueva contraseña.
-        // Usamos redirect para evitar reenvíos del formulario al refrescar.
-        return "redirect:/nueva-password?email=" + java.net.URLEncoder.encode(emailNormalizado, java.nio.charset.StandardCharsets.UTF_8);
-    }
-
-    @GetMapping("/nueva-password")
-    public String mostrarNuevaPassword(@RequestParam String email,
-                                       Model modelo) {
-        // Si el correo no existe, volvemos al formulario anterior.
-        // Esto evita que alguien cambie contraseñas accediendo directamente
-        // a /nueva-password?email=... sin haber pasado por /recuperar-password.
-        if (usuarioRepositorio.findByEmail(email.trim().toLowerCase()).isEmpty()) {
-            return "redirect:/recuperar-password";
-        }
-        modelo.addAttribute("email", email);
-        return "nueva-password";
-    }
-
-    @PostMapping("/nueva-password")
-    public String procesarNuevaPassword(@RequestParam String email,
-                                        @RequestParam String password,
-                                        @RequestParam String confirmarPassword,
-                                        Model modelo) {
-        String emailNormalizado = email.trim().toLowerCase();
-        Optional<Usuario> usuarioOpt = usuarioRepositorio.findByEmail(emailNormalizado);
-
-        if (usuarioOpt.isEmpty()) {
+        String emailNorm = email.trim().toLowerCase();
+        if (usuarioRepositorio.findByEmail(emailNorm).isEmpty()) {
             modelo.addAttribute("error",
-                    "La cuenta ya no existe. Vuelve a iniciar el proceso de recuperación.");
-            modelo.addAttribute("email", email);
-            return "nueva-password";
+                    "No encontramos una cuenta registrada con ese correo.");
+            modelo.addAttribute("emailIngresado", email);
+            modelo.addAttribute("paso", 1);
+            return "recuperar-password";
         }
 
-        if (!password.equals(confirmarPassword)) {
-            modelo.addAttribute("error", "Las contraseñas no coinciden.");
-            modelo.addAttribute("email", email);
-            return "nueva-password";
-        }
-
-        if (password.length() < 6) {
-            modelo.addAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
-            modelo.addAttribute("email", email);
-            return "nueva-password";
-        }
-
-        Usuario usuario = usuarioOpt.get();
-        String saltNuevo = PasswordUtil.generarSalt();
-        usuario.setSalt(saltNuevo);
-        usuario.setPasswordHash(PasswordUtil.hashPassword(password, saltNuevo));
-        usuarioRepositorio.save(usuario);
-
-        return "redirect:/login?recuperada";
+        // El correo existe → ir al paso 2.
+        // Usamos redirect para evitar reenvíos del formulario al refrescar.
+        String url = "/recuperar-password?paso=2&email="
+                + URLEncoder.encode(emailNorm, StandardCharsets.UTF_8);
+        return "redirect:" + url;
     }
 
     @GetMapping("/logout")
