@@ -49,20 +49,21 @@ public class MigrationImagenesProductos implements CommandLineRunner {
     }
 
     private boolean debeActualizar(String urlActual, String nuevaUrl) {
-
+        // 1. URL vacía o null → actualizar
         if (urlActual == null || urlActual.isBlank()) {
             return true;
         }
-
+        // 2. URL contiene "placehold.co" → actualizar (placeholder antiguo)
         if (urlActual.contains("placehold.co")) {
             return true;
         }
-
+        // 3. URL externa http(s):// personalizada que no sea placeholder → respetar
         if (urlActual.startsWith("http://") || urlActual.startsWith("https://")) {
             return false;
         }
+        // 4. URL local que apunta a /img/productos/<archivo> → respetar
+        //    (el admin la seteó manualmente o ya estaba migrada)
         if (urlActual.startsWith("/img/productos/")) {
-
             if (nuevaUrl.startsWith("/img/productos/")) {
                 return !urlActual.equals(nuevaUrl);
             }

@@ -277,7 +277,15 @@
                             </div>
                         </div>
                         <div class="card-footer bg-white border-0 pb-3">
-                            <button class="btn btn-primary w-100 btn-comprar"
+                            <!-- Si no hay sesión iniciada, el botón redirige al login -->
+                            <a th:unless="${estaLogueado}" th:href="@{/login?requiereLogin}"
+                               class="btn btn-outline-primary w-100 btn-comprar"
+                               onclick="event.stopPropagation();">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Inicia sesión para comprar
+                            </a>
+                            <!-- Si hay sesión iniciada, el botón abre el modal de confirmación + boleta -->
+                            <button th:if="${estaLogueado}"
+                                    class="btn btn-primary w-100 btn-comprar"
                                     type="button"
                                     th:data-id="${p.id}"
                                     th:data-nombre="${p.nombre}"
@@ -562,6 +570,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    const USUARIO_LOGUEADO = /*[[${estaLogueado}]]*/ false;
+
     let productoSeleccionado = null;
     let compraConfirmada = false;
 
@@ -655,8 +665,12 @@
         estadoBadge.querySelector('i').className = 'bi bi-check-circle-fill';
         estadoTexto.textContent = 'Compra confirmada';
     }
-
     function seleccionarProducto(card) {
+        if (!USUARIO_LOGUEADO) {
+            window.location.href = '/login?requiereLogin';
+            return;
+        }
+
         // Quitar selección anterior
         document.querySelectorAll('.card-producto').forEach(c => c.classList.remove('seleccionada'));
         card.classList.add('seleccionada');
@@ -671,13 +685,10 @@
         productoSeleccionado = { id, nombre, precio, desc, stock, fecha };
         compraConfirmada = false;
 
-        // Llenar la boleta con los datos y mostrarla BLOQUEADA
         llenarBoleta(productoSeleccionado);
         panelBoleta.classList.add('visible');
         bloquearBoleta();
 
-        // Abrir el modal de confirmación de compra programáticamente.
-        // Usamos setTimeout(0) para asegurar que la boleta se renderice primero.
         setTimeout(function() {
             const modal = bootstrap.Modal.getOrCreateInstance(modalCompra);
             // Cargar datos en el modal manualmente (porque relatedTarget es null)
@@ -749,9 +760,10 @@
         const doc = new jsPDF({ unit: 'mm', format: 'a5' });
 
         const p = productoSeleccionado;
-        const subtotal = p.precio / 1.18;
-        const igv      = p.precio - subtotal;
-        const nBoleta  = 'B001-' + String(Math.floor(Math.abs(Math.sin(p.precio * 1000)) * 99999)).padStart(5, '0');
+        const precioNum = parseFloat(p.precio);
+        const subtotal = precioNum / 1.18;
+        const igv      = precioNum - subtotal;
+        const nBoleta  = 'B001-' + String(Math.floor(Math.abs(Math.sin(precioNum * 1000)) * 99999)).padStart(5, '0');
         const fechaStr = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' });
 
         const W = 148; // A5 width mm
@@ -790,7 +802,7 @@
         doc.setTextColor(40, 40, 40);
         linea('Producto', p.nombre);
         linea('Cantidad', '1 unidad');
-        linea('Precio unitario', 'S/. ' + p.precio.toFixed(2));
+        linea('Precio unitario', 'S/. ' + precioNum.toFixed(2));
 
         y += 3;
         // Caja total
@@ -808,7 +820,7 @@
         doc.line(15, y + 21, W - 15, y + 21);
         doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(13, 110, 253);
         doc.text('TOTAL:', 15, y + 29);
-        doc.text('S/. ' + p.precio.toFixed(2), W - 15, y + 29, { align: 'right' });
+        doc.text('S/. ' + precioNum.toFixed(2), W - 15, y + 29, { align: 'right' });
 
         y += 42;
         doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 150, 150);

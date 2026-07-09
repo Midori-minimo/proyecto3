@@ -59,7 +59,11 @@ public class TiendaControlador {
     }
 
     @PostMapping("/comprar")
-    public String comprarProducto(@RequestParam("productoId") String id) {
+    public String comprarProducto(@RequestParam("productoId") String id, HttpSession sesion) {
+        if (!esLogueado(sesion)) {
+            return "redirect:/login?requiereLogin";
+        }
+
         Optional<Producto> opcional = productoRepositorio.findById(id);
         boolean comprado = false;
         if (opcional.isPresent()) {
@@ -75,7 +79,6 @@ public class TiendaControlador {
         }
         return "redirect:/inicio";
     }
-
     @PostMapping("/agregar")
     public String agregarProducto(@ModelAttribute Producto producto,
                                   @RequestParam(value = "imagenUrl", required = false) String imagenUrl,
@@ -168,6 +171,12 @@ public class TiendaControlador {
     private boolean esAdmin(HttpSession sesion) {
         Object rol = sesion.getAttribute("usuarioRol");
         return "ADMIN".equals(rol);
+    }
+
+    /** true si hay una sesión iniciada (cualquier rol: CLIENTE o ADMIN) */
+    private boolean esLogueado(HttpSession sesion) {
+        Object rol = sesion.getAttribute("usuarioRol");
+        return rol != null;
     }
 
     /** Agrega al modelo los datos de sesión que la vista necesita para mostrar/ocultar secciones */

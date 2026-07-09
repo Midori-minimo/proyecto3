@@ -49,6 +49,9 @@
                 <div th:if="${param.recuperada}" class="alert alert-success py-2 small">
                     <i class="bi bi-check-circle me-1"></i>Tu contraseña fue actualizada. Ya puedes iniciar sesión con la nueva.
                 </div>
+                <div th:if="${param.requiereLogin}" class="alert alert-warning py-2 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Debes iniciar sesión para poder comprar.
+                </div>
                 <div th:if="${error}" class="alert alert-danger py-2 small" th:text="${error}"></div>
 
                 <form th:action="@{/login}" method="post">
