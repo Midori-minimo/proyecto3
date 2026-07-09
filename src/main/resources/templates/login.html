@@ -46,6 +46,9 @@
                 <div th:if="${param.registrado}" class="alert alert-success py-2 small">
                     <i class="bi bi-check-circle me-1"></i>Cuenta creada con éxito. Ya puedes iniciar sesión.
                 </div>
+                <div th:if="${param.recuperada}" class="alert alert-success py-2 small">
+                    <i class="bi bi-check-circle me-1"></i>Tu contraseña fue actualizada. Ya puedes iniciar sesión con la nueva.
+                </div>
                 <div th:if="${error}" class="alert alert-danger py-2 small" th:text="${error}"></div>
 
                 <form th:action="@{/login}" method="post">
@@ -54,9 +57,14 @@
                         <input type="email" class="form-control" id="email" name="email"
                                th:value="${emailIngresado}" required placeholder="tucorreo@ejemplo.com"/>
                     </div>
-                    <div class="mb-4">
-                        <label for="password" class="form-label fw-semibold">Contraseña</label>
-                        <input type="password" class="form-control" id="password" name="password" required/>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label for="password" class="form-label fw-semibold mb-0">Contraseña</label>
+                            <a th:href="@{/recuperar-password}" class="small text-decoration-none">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        </div>
+                        <input type="password" class="form-control mt-1" id="password" name="password" required/>
                     </div>
                     <button type="submit" class="btn btn-login btn-primary w-100 py-2 fw-semibold text-white">
                         <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar

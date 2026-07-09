@@ -210,8 +210,9 @@
                          th:data-stock="${p.cantidad}"
                          th:data-fecha="${p.fecha}"
                          onclick="seleccionarProducto(this)">
-                        <img th:src="${#strings.startsWith(p.imagenUrl, 'http')} ? ${p.imagenUrl} : @{'/img/' + ${p.imagenUrl}}"
-                             class="card-img-top" th:alt="${p.nombre}"/>
+                        <img th:src="${#strings.startsWith(p.imagenUrl, 'http') or #strings.startsWith(p.imagenUrl, '/')} ? ${p.imagenUrl} : @{'/img/' + ${p.imagenUrl}}"
+                             class="card-img-top" th:alt="${p.nombre}"
+                             onerror="this.onerror=null; this.src='https://placehold.co/500x500/0d6efd/ffffff?text=Sin+imagen';"/>
                         <div class="card-body d-flex flex-column">
                             <h6 class="card-title fw-bold mb-1" th:text="${p.nombre}">Nombre</h6>
                             <p class="card-text text-muted small flex-grow-1" th:text="${p.descripcion}">Descripción</p>
@@ -430,8 +431,17 @@
                                   rows="3" placeholder="Características principales..."></textarea>
                     </div>
                     <div class="mb-1">
-                        <div class="alert alert-light border small mb-0 py-2">
-                            <i class="bi bi-image me-1"></i>La imagen se genera automáticamente según el nombre del producto.
+                        <label for="imagenUrl" class="form-label fw-semibold">
+                            URL de imagen <span class="text-muted small fw-normal">(opcional)</span>
+                        </label>
+                        <input type="url" class="form-control" id="imagenUrl" name="imagenUrl"
+                               placeholder="https://...  (si lo dejas vacío, se busca automáticamente)"/>
+                        <div class="alert alert-light border small mt-2 mb-0 py-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Si lo dejas vacío, se asigna automáticamente una foto real cuando el
+                            modelo está en el catálogo (Huawei Nova, Xiaomi Redmi Note / 13T,
+                            Samsung Galaxy S25 / A55, iPhone 14 / 15). Para otros modelos, se
+                            usa un placeholder con el color de la marca.
                         </div>
                     </div>
                 </div>
