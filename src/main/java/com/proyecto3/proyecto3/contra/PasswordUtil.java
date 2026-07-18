@@ -11,7 +11,6 @@ public class PasswordUtil {
     private static final int ITERACIONES = 65536;
     private static final int LONGITUD_LLAVE = 256;
 
-    /** Genera un salt aleatorio nuevo, codificado en Base64 para poder guardarlo como texto. */
     public static String generarSalt() {
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[16];
@@ -19,7 +18,6 @@ public class PasswordUtil {
         return Base64.getEncoder().encodeToString(salt);
     }
 
-    /** Genera el hash de una contraseña en texto plano usando el salt indicado. */
     public static String hashPassword(String password, String saltBase64) {
         try {
             byte[] salt = Base64.getDecoder().decode(saltBase64);
@@ -32,7 +30,6 @@ public class PasswordUtil {
         }
     }
 
-    /** Compara una contraseña en texto plano contra el hash guardado, usando el mismo salt. */
     public static boolean verificarPassword(String passwordIngresada, String saltBase64, String hashGuardado) {
         String hashCalculado = hashPassword(passwordIngresada, saltBase64);
         return hashCalculado.equals(hashGuardado);

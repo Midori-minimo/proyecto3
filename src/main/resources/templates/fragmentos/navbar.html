@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<!-- flexbox -->
+<nav class="navbar-perutec" th:fragment="navbar">
+    <a class="navbar-brand-perutec" th:href="@{/inicio}">
+        <i class="bi bi-phone-fill"></i>PeruTec
+    </a>
+    <div class="nav-links">
+        <a th:href="@{/inicio}">Tienda</a>
+        <a th:href="@{/celulares}">Celulares</a>
+        <a th:href="@{/inicio#soporte}">Soporte</a>
+    </div>
+    <div class="navbar-search">
+        <i class="bi bi-search search-icon"></i>
+        <input type="search" id="inputBusqueda" placeholder="Buscar productos..."
+               aria-label="Buscar" oninput="buscarProductos(this.value)"/>
+    </div>
+    <div class="navbar-icons">
+        <a class="navbar-icon-btn" th:href="@{/celulares}" title="Celulares">
+            <i class="bi bi-search"></i>
+        </a>
+        <button class="navbar-icon-btn" type="button"
+                data-bs-toggle="modal" data-bs-target="#modalCarrito"
+                title="Carrito" sec:authorize="isAuthenticated()">
+            <i class="bi bi-cart3"></i>
+            <span class="badge-carrito vacio" id="badgeCarrito">0</span>
+        </button>
+        <button class="navbar-icon-btn" type="button"
+                data-bs-toggle="modal" data-bs-target="#modalCuenta"
+                title="Cuenta" sec:authorize="isAnonymous()">
+            <i class="bi bi-person-circle"></i>
+        </button>
+        <a class="navbar-icon-btn" th:href="@{/logout}" title="Salir"
+           sec:authorize="isAuthenticated()">
+            <i class="bi bi-box-arrow-right"></i>
+        </a>
+    </div>
+</nav>
+
+</body>
+</html>

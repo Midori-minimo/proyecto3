@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- filtros -->
+<aside class="panel-filtros" th:fragment="filtros(marcas, precioMin, precioMax)">
+    <div class="filtros-titulo">
+        <span><i class="bi bi-funnel-fill"></i> Filtros</span>
+        <button type="button" class="btn-close d-lg-none" onclick="toggleFiltros()"></button>
+    </div>
+
+    <div class="filtro-seccion">
+        <h6><i class="bi bi-tag"></i> Marca</h6>
+        <div id="listaMarcasFiltro">
+            <div class="form-check" th:each="marca : ${marcas}">
+                <input class="form-check-input" type="checkbox"
+                       th:value="${marca}" th:id="'marca_' + ${marca}">
+                <label class="form-check-label" th:for="'marca_' + ${marca}" th:text="${marca}">Marca</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="filtro-seccion">
+        <h6><i class="bi bi-currency-dollar"></i> Precio (S/.)</h6>
+        <div class="precio-inputs mb-2">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text">Min</span>
+                <input type="number" class="form-control" id="precioMin"
+                       th:placeholder="${precioMin}" min="0" step="50"/>
+            </div>
+            <div class="input-group input-group-sm">
+                <span class="input-group-text">Max</span>
+                <input type="number" class="form-control" id="precioMax"
+                       th:placeholder="${precioMax}" min="0" step="50"/>
+            </div>
+        </div>
+        <small class="text-muted d-block"
+               th:text="'Rango: S/ ' + ${#numbers.formatDecimal(precioMin, 1, 0)} + ' – S/ ' + ${#numbers.formatDecimal(precioMax, 1, 0)}">Rango</small>
+    </div>
+
+    <button class="btn-filtrar" onclick="aplicarFiltros()">
+        <i class="bi bi-check2-circle"></i> Aplicar filtros
+    </button>
+    <button class="btn-limpiar" onclick="limpiarFiltros()">
+        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+    </button>
+</aside>
+
+</body>
+</html>

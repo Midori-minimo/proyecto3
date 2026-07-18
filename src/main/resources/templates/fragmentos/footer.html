@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- grid -->
+<footer class="footer-perutec" th:fragment="footer">
+    <div class="container-app">
+        <div class="footer-grid">
+            <div>
+                <h6>Sobre nosotros</h6>
+                <a th:href="@{/inicio}">PeruTec</a>
+                <a th:href="@{/inicio#soporte}">Soporte</a>
+                <a th:href="@{/inicio#garantia}">Garantía</a>
+                <a th:href="@{/inicio#servicio}">Servicio al cliente</a>
+            </div>
+            <div>
+                <h6>Términos &amp; condiciones</h6>
+                <a th:href="@{/inicio#tc}">T&amp;C</a>
+                <a th:href="@{/inicio#terminos}">Términos &amp; condiciones</a>
+                <a th:href="@{/inicio#cuotas}">Cuotas sin intereses</a>
+            </div>
+            <div>
+                <h6>Síguenos en</h6>
+                <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+                <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+                <a href="https://tiktok.com" target="_blank" rel="noopener">TikTok</a>
+                <a href="https://twitter.com" target="_blank" rel="noopener">X (Twitter)</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            Copyright © 2026 PeruTec. Todos los derechos reservados · Perú / Español
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
