@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${modo == 'nuevo' ? 'Nuevo producto' : 'Editar producto'} + ' — Admin PeruTec'">Form producto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet"/>
+</head>
+<body style="padding-top: 0;">
+
+<button class="admin-toggle-btn" type="button" onclick="document.querySelector('.admin-sidebar').classList.toggle('open')">
+    <i class="bi bi-list"></i>
+</button>
+
+<aside class="admin-sidebar">
+    <div class="sidebar-header">
+        <h5><i class="bi bi-speedometer2 text-warning"></i>PeruTec Admin</h5>
+        <small th:text="'Hola, ' + ${nombreUsuario}">Admin</small>
+    </div>
+    <a class="nav-link-admin" th:href="@{/admin}"><i class="bi bi-house-door"></i> Dashboard</a>
+    <a class="nav-link-admin active" th:href="@{/admin/productos}"><i class="bi bi-phone"></i> Productos</a>
+    <a class="nav-link-admin" th:href="@{/admin/usuarios}"><i class="bi bi-people"></i> Usuarios</a>
+    <a class="nav-link-admin" th:href="@{/admin/ventas}"><i class="bi bi-bag-check"></i> Ventas</a>
+    <a class="nav-link-admin" th:href="@{/admin/ventas/excel}"><i class="bi bi-file-earmark-excel"></i> Exportar Excel</a>
+    <div class="sidebar-footer">
+        <a class="nav-link-admin" th:href="@{/inicio}"><i class="bi bi-shop"></i> Ver tienda</a>
+        <a class="nav-link-admin" th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>
+    </div>
+</aside>
+
+<main class="admin-main">
+    <div class="admin-header">
+        <div>
+            <h1>
+                <i class="bi bi-pencil-square me-2" th:if="${modo == 'editar'}"></i>
+                <i class="bi bi-plus-circle me-2" th:if="${modo != 'editar'}"></i>
+                <span th:text="${modo == 'editar' ? 'Editar producto' : 'Nuevo producto'}">Producto</span>
+            </h1>
+            <small class="text-muted">Completa los datos del producto</small>
+        </div>
+        <a class="btn btn-outline-secondary" th:href="@{/admin/productos}">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+
+    <div class="admin-card">
+        <form th:action="@{/admin/productos/guardar}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="id" th:value="${producto.id}"/>
+            <input type="hidden" name="modo" th:value="${modo}"/>
+            <input type="hidden" name="imagenUrl" th:value="${producto.imagenUrl}"/>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label-admin">Nombre del producto *</label>
+                    <input type="text" name="nombre" class="form-control-admin"
+                           th:value="${producto.nombre}" required
+                           placeholder="Ej: Samsung Galaxy S25 Ultra"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-admin">Marca *</label>
+                    <input type="text" name="marca" class="form-control-admin"
+                           th:value="${producto.marca}" required
+                           placeholder="Ej: Samsung"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-admin">Tipo *</label>
+                    <select name="tipoStr" class="form-control-admin" required>
+                        <option value="">Selecciona...</option>
+                        <option value="CELULAR"
+                                th:selected="${producto.tipo != null and producto.tipo.name() == 'CELULAR'}">Celular</option>
+                        <option value="TABLET"
+                                th:selected="${producto.tipo != null and producto.tipo.name() == 'TABLET'}">Tablet</option>
+                        <option value="WEARABLE"
+                                th:selected="${producto.tipo != null and producto.tipo.name() == 'WEARABLE'}">Wearable</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-admin">Precio (S/) *</label>
+                    <input type="number" name="precio" class="form-control-admin"
+                           th:value="${producto.precio}" required min="0" step="0.01"
+                           placeholder="0.00"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-admin">Stock / Cantidad *</label>
+                    <input type="number" name="cantidad" class="form-control-admin"
+                           th:value="${producto.cantidad}" required min="0"
+                           placeholder="0"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-admin">Fecha</label>
+                    <input type="text" class="form-control-admin" disabled
+                           th:value="${producto.fecha != null ? producto.fecha.toString() : 'Hoy'}"/>
+                </div>
+                <div class="col-12">
+                    <label class="form-label-admin">Descripción</label>
+                    <textarea name="descripcion" class="form-control-admin" rows="3"
+                              th:text="${producto.descripcion}"
+                              placeholder="Características principales..."></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label-admin">Imagen del producto</label>
+                    <input type="file" name="imagenArchivo" class="form-control-admin"
+                           accept="image/*" onchange="previsualizarImagen(this)"/>
+                    <div class="image-preview" id="previewContainer">
+                        <img th:if="${producto.imagenUrl != null and !producto.imagenUrl.isEmpty()}"
+                             th:src="${#strings.startsWith(producto.imagenUrl, 'http') or #strings.startsWith(producto.imagenUrl, '/')} ? ${producto.imagenUrl} : @{'/img/' + ${producto.imagenUrl}}"
+                             id="previewImg"
+                             onerror="this.onerror=null; this.style.display='none'; document.getElementById('previewPlaceholder').style.display='block';"/>
+                        <div class="placeholder" id="previewPlaceholder"
+                             th:if="${producto.imagenUrl == null or producto.imagenUrl.isEmpty()}"
+                             style="display:block;">
+                            <i class="bi bi-image"></i>
+                            <span>Selecciona una imagen</span>
+                        </div>
+                    </div>
+                    <small class="text-muted">Formatos: JPG, PNG, WebP. Máximo 10MB.</small>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary-perutec">
+                    <i class="bi bi-save me-1"></i>
+                    <span th:text="${modo == 'editar' ? 'Guardar cambios' : 'Crear producto'}">Guardar</span>
+                </button>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/productos}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function previsualizarImagen(input) {
+        const preview = document.getElementById('previewContainer');
+        const placeholder = document.getElementById('previewPlaceholder');
+        const img = document.getElementById('previewImg');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (img) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                } else {
+                    const newImg = document.createElement('img');
+                    newImg.id = 'previewImg';
+                    newImg.src = e.target.result;
+                    preview.appendChild(newImg);
+                }
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+</body>
+</html>

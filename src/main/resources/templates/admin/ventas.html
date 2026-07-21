@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Ventas — Admin PeruTec</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet"/>
+</head>
+<body style="padding-top: 0;">
+
+<button class="admin-toggle-btn" type="button" onclick="document.querySelector('.admin-sidebar').classList.toggle('open')">
+    <i class="bi bi-list"></i>
+</button>
+
+<aside class="admin-sidebar">
+    <div class="sidebar-header">
+        <h5><i class="bi bi-speedometer2 text-warning"></i>PeruTec Admin</h5>
+        <small th:text="'Hola, ' + ${nombreUsuario}">Admin</small>
+    </div>
+    <a class="nav-link-admin" th:href="@{/admin}"><i class="bi bi-house-door"></i> Dashboard</a>
+    <a class="nav-link-admin" th:href="@{/admin/productos}"><i class="bi bi-phone"></i> Productos</a>
+    <a class="nav-link-admin" th:href="@{/admin/usuarios}"><i class="bi bi-people"></i> Usuarios</a>
+    <a class="nav-link-admin active" th:href="@{/admin/ventas}"><i class="bi bi-bag-check"></i> Ventas</a>
+    <a class="nav-link-admin" th:href="@{/admin/ventas/excel}"><i class="bi bi-file-earmark-excel"></i> Exportar Excel</a>
+    <div class="sidebar-footer">
+        <a class="nav-link-admin" th:href="@{/inicio}"><i class="bi bi-shop"></i> Ver tienda</a>
+        <a class="nav-link-admin" th:href="@{/logout}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>
+    </div>
+</aside>
+
+<main class="admin-main">
+    <div class="admin-header">
+        <div>
+            <h1><i class="bi bi-bag-check me-2"></i>Ventas</h1>
+            <small class="text-muted">Historial completo de ventas</small>
+        </div>
+        <a class="btn btn-primary-perutec" th:href="@{/admin/ventas/excel}">
+            <i class="bi bi-file-earmark-excel me-1"></i>Descargar Excel
+        </a>
+    </div>
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-bag-check"></i></div>
+            <div class="stat-body">
+                <div class="stat-value" th:text="${totalVentas}">0</div>
+                <div class="stat-label">Ventas totales</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-currency-dollar"></i></div>
+            <div class="stat-body">
+                <div class="stat-value" th:text="'S/ ' + ${#numbers.formatDecimal(ingresosTotales, 1, 2)}">S/ 0.00</div>
+                <div class="stat-label">Ingresos totales</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="admin-card">
+                <h2><i class="bi bi-list-ul me-2"></i>Historial de ventas</h2>
+                <div th:if="${ventas.isEmpty()}" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox d-block mb-2" style="font-size: 2.5rem; opacity: .5;"></i>
+                    <p class="mb-0">Aún no hay ventas registradas.</p>
+                </div>
+                <div th:if="${!ventas.isEmpty()}" class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Producto(s)</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="v : ${ventas}">
+                            <td th:text="${v.fecha != null ? v.fecha.toLocalDate().toString() : '—'}">—</td>
+                            <td>
+                                <div class="fw-semibold" th:text="${v.usuarioNombre}">—</div>
+                                <small class="text-muted" th:text="${v.usuarioEmail}">—</small>
+                            </td>
+                            <td>
+                                <div th:if="${v.items != null}" th:each="item : ${v.items}">
+                                    <small>
+                                        <span th:text="${item.cantidad + '× ' + item.productoNombre}">1× Producto</span>
+                                        <span class="text-muted" th:text="' (S/ ' + ${#numbers.formatDecimal(item.subtotal, 1, 2)} + ')'"></span>
+                                    </small>
+                                </div>
+                            </td>
+                            <td class="text-end fw-bold text-primary" th:text="'S/ ' + ${#numbers.formatDecimal(v.total, 1, 2)}">S/ 0.00</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="admin-card">
+                <h2><i class="bi bi-tag me-2"></i>Por marca</h2>
+                <div th:if="${ventasPorMarca.isEmpty()}" class="text-muted">Sin datos</div>
+                <div th:each="entrada : ${ventasPorMarca}" class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span th:text="${entrada.key}">Marca</span>
+                    <span class="fw-bold" th:text="${entrada.value + ' u.'}">0</span>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h2><i class="bi bi-pie-chart me-2"></i>Por tipo</h2>
+                <div th:if="${ventasPorTipo.isEmpty()}" class="text-muted">Sin datos</div>
+                <div th:each="entrada : ${ventasPorTipo}" class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="badge-tipo" th:classappend="${entrada.key.toString().toLowerCase()}" th:text="${entrada.key}">Tipo</span>
+                    <span class="fw-bold" th:text="${entrada.value + ' u.'}">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

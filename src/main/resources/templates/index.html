@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:authorization="https://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -17,33 +18,33 @@
 <div th:replace="~{fragmentos/navbar :: navbar}"></div>
 
 <main>
-    <!-- carrusel -->
-    <div id="carruselPrincipal" class="carousel slide carrusel-publicidad" data-bs-ride="carousel">
-        <div class="carousel-indicators">
-            <button type="button" data-bs-target="#carruselPrincipal" data-bs-slide-to="0" class="active"></button>
-            <button type="button" data-bs-target="#carruselPrincipal" data-bs-slide-to="1"></button>
-            <button type="button" data-bs-target="#carruselPrincipal" data-bs-slide-to="2"></button>
-        </div>
-        <div class="carousel-inner">
-            <div class="carousel-item active">
-                <img th:src="@{/img/publicidad1.jpg}" alt="Samsung"/>
-            </div>
-            <div class="carousel-item">
-                <img th:src="@{/img/publicidad2.jpg}" alt="iPhone"/>
-            </div>
-            <div class="carousel-item">
-                <img th:src="@{/img/publicidad3.jpg}" alt="Huawei"/>
-            </div>
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#carruselPrincipal" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#carruselPrincipal" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
-        </button>
-    </div>
-
     <div class="container-app">
+
+        <!-- carrusel -->
+        <div id="carruselPrincipal" class="carousel slide carrusel-publicidad" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#carruselPrincipal" data-bs-slide-to="0" class="active"></button>
+                <button type="button" data-bs-target="#carruselPrincipal" data-bs-slide-to="1"></button>
+                <button type="button" data-bs-target="#carruselPrincipal" data-bs-slide-to="2"></button>
+            </div>
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <img th:src="@{/img/publicidad1.jpg}" alt="Samsung"/>
+                </div>
+                <div class="carousel-item">
+                    <img th:src="@{/img/publicidad2.jpg}" alt="iPhone"/>
+                </div>
+                <div class="carousel-item">
+                    <img th:src="@{/img/publicidad3.jpg}" alt="Huawei"/>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carruselPrincipal" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carruselPrincipal" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        </div>
 
         <!-- grid -->
         <section class="accesos-rapidos">
@@ -62,17 +63,17 @@
         </section>
 
         <!-- carrusel -->
-        <section class="carrusel-novedades">
+        <section class="carrusel-novedades" th:if="${loMasNuevo != null and !loMasNuevo.isEmpty()}">
             <div class="seccion-titulo">
                 <span><i class="bi bi-stars me-2 text-warning"></i>Lo más nuevo</span>
                 <a class="ver-todo" th:href="@{/celulares}">Ver todo <i class="bi bi-arrow-right"></i></a>
             </div>
-            <div id="carruselNovedades" class="carousel slide" data-bs-ride="carousel">
+            <div id="carruselNovedades" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
                 <div class="carousel-inner">
                     <div class="carousel-item" th:each="p, i : ${loMasNuevo}"
                          th:classappend="${i == 0} ? 'active' : ''">
                         <div class="novedad-card"
-                             th:classappend="${(p.marca != null ? p.marca.toLowerCase() : '')}">
+                             th:classappend="${(p.marca != null ? p.marca.toLowerCase() : 'otro')}">
                             <div class="novedad-imagen">
                                 <img th:src="${#strings.startsWith(p.imagenUrl, 'http') or #strings.startsWith(p.imagenUrl, '/')} ? ${p.imagenUrl} : @{'/img/' + ${p.imagenUrl}}"
                                      th:alt="${p.nombre}"
@@ -99,6 +100,13 @@
                 <button class="carousel-control-next" type="button" data-bs-target="#carruselNovedades" data-bs-slide="next">
                     <span class="carousel-control-next-icon"></span>
                 </button>
+            </div>
+        </section>
+
+        <section class="seccion-categoria" th:if="${loMasNuevo == null or loMasNuevo.isEmpty()}">
+            <div class="categoria-header">
+                <h3 class="categoria-titulo"><i class="bi bi-info-circle me-2"></i>Lo más nuevo</h3>
+                <p class="text-muted mt-2 mb-0">Aún no hay productos destacados. Cuando agregues productos desde el panel de administración, aparecerán aquí.</p>
             </div>
         </section>
 
@@ -182,164 +190,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:inline="javascript">
-    const USUARIO_LOGUEADO = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
-    let productoSeleccionado = null;
-    let compraConfirmada = false;
-    let carrito = [];
-    const SS_KEY_CARRITO = 'carritoPeruTec';
-
-    function abrirModalCompra(boton) {
-        if (!USUARIO_LOGUEADO) {
-            const modalCuenta = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCuenta'));
-            modalCuenta.show();
-            return;
-        }
-        const id = boton.getAttribute('data-id');
-        const nombre = boton.getAttribute('data-nombre');
-        const precio = parseFloat(boton.getAttribute('data-precio'));
-        productoSeleccionado = { id, nombre, precio };
-        document.getElementById('inputProductoId').value = id;
-        document.getElementById('nombreProductoModal').textContent = nombre;
-        document.getElementById('precioProductoModal').textContent = 'S/ ' + precio.toFixed(2);
-        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCompra'));
-        modal.show();
-    }
-
-    function buscarProductos(texto) {
-        texto = (texto || '').toLowerCase().trim();
-        document.querySelectorAll('.producto-card').forEach(function(card) {
-            const nombre = (card.querySelector('.producto-nombre')?.textContent || '').toLowerCase();
-            card.style.display = (texto === '' || nombre.indexOf(texto) !== -1) ? '' : 'none';
-        });
-    }
-
-    function cargarCarrito() {
-        try {
-            const data = sessionStorage.getItem(SS_KEY_CARRITO);
-            carrito = data ? JSON.parse(data) : [];
-        } catch (e) { carrito = []; }
-        actualizarBadgeCarrito();
-    }
-    function guardarCarrito() {
-        try { sessionStorage.setItem(SS_KEY_CARRITO, JSON.stringify(carrito)); } catch (e) {}
-        actualizarBadgeCarrito();
-    }
-    function actualizarBadgeCarrito() {
-        const badge = document.getElementById('badgeCarrito');
-        if (!badge) return;
-        const total = carrito.reduce((s, i) => s + (i.cantidad || 1), 0);
-        badge.textContent = total;
-        badge.classList.toggle('vacio', total === 0);
-    }
-    function agregarAlCarrito(p) {
-        const ex = carrito.find(i => i.id === p.id);
-        if (ex) { ex.cantidad = (ex.cantidad || 1) + 1; }
-        else { carrito.push({ id: p.id, nombre: p.nombre, precio: parseFloat(p.precio), cantidad: 1 }); }
-        guardarCarrito();
-    }
-    function eliminarDelCarrito(id) {
-        carrito = carrito.filter(i => i.id !== id);
-        guardarCarrito(); renderCarrito();
-    }
-    function vaciarCarrito() {
-        if (!carrito.length) return;
-        if (!confirm('¿Vaciar todo el carrito?')) return;
-        carrito = []; guardarCarrito(); renderCarrito();
-    }
-    function renderCarrito() {
-        const body = document.getElementById('carritoBody');
-        const footer = document.getElementById('carritoFooter');
-        if (!carrito.length) {
-            body.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-cart-x d-block mb-2" style="font-size:3rem;"></i><p class="mb-0">Tu carrito está vacío</p></div>';
-            footer.style.display = 'none';
-            return;
-        }
-        let html = '', total = 0;
-        carrito.forEach(item => {
-            const sub = item.precio * (item.cantidad || 1);
-            total += sub;
-            html += '<div class="d-flex gap-2 align-items-center py-2 border-bottom"><div class="flex-grow-1"><div class="fw-semibold small">' + escapeHtml(item.nombre) + '</div><div class="text-primary small">S/ ' + item.precio.toFixed(2) + (item.cantidad > 1 ? ' × ' + item.cantidad + ' = S/ ' + sub.toFixed(2) : '') + '</div></div><button class="btn btn-sm btn-link text-danger p-0" onclick="eliminarDelCarrito(\'' + item.id + '\')"><i class="bi bi-trash3"></i></button></div>';
-        });
-        body.innerHTML = html;
-        document.getElementById('carritoTotal').textContent = 'S/ ' + total.toFixed(2);
-        footer.style.display = 'flex';
-    }
-    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-    function finalizarCompraCarrito() {
-        if (!carrito.length) return;
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: 'a5' });
-        const W = 148;
-        let totalG = 0;
-        carrito.forEach((item, idx) => {
-            if (idx > 0) doc.addPage();
-            const sub = item.precio * (item.cantidad || 1);
-            totalG += sub;
-            const subIgv = sub / 1.18, igv = sub - subIgv;
-            const nB = 'B001-' + String(Math.floor(Math.abs(Math.sin(item.precio * 1000 + idx)) * 99999)).padStart(5, '0');
-            doc.setFillColor(255, 107, 53); doc.rect(0, 0, W, 38, 'F');
-            doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-            doc.text('PeruTec', 10, 13);
-            doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-            doc.text('RUC: 20123456789 | Lima, Peru', 10, 20);
-            doc.text('BOLETA DE VENTA ELECTRONICA', 10, 26);
-            doc.setFontSize(9); doc.text('N° ' + nB, 10, 33);
-            doc.setTextColor(40, 40, 40); let y = 48;
-            const ln = (l, v) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(l + ':', 10, y); doc.setFont('helvetica', 'bold'); doc.text(String(v), W - 10, y, { align: 'right' }); doc.setDrawColor(200, 200, 200); doc.line(10, y + 2, W - 10, y + 2); y += 10; };
-            ln('Fecha', new Date().toLocaleDateString('es-PE'));
-            ln('Cliente', 'Consumidor Final');
-            y += 3; doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-            doc.text('DETALLE', 10, y); y += 7; doc.setTextColor(40, 40, 40);
-            ln('Producto', item.nombre);
-            ln('Cantidad', (item.cantidad || 1) + ' unidad(es)');
-            ln('Precio unitario', 'S/ ' + item.precio.toFixed(2));
-            y += 3; doc.setFillColor(248, 249, 250); doc.roundedRect(10, y, W - 20, 32, 3, 3, 'F');
-            doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
-            doc.text('Subtotal:', 15, y + 9); doc.setFont('helvetica', 'bold'); doc.setTextColor(40, 40, 40);
-            doc.text('S/ ' + subIgv.toFixed(2), W - 15, y + 9, { align: 'right' });
-            doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80); doc.text('IGV (18%):', 15, y + 17);
-            doc.setFont('helvetica', 'bold'); doc.setTextColor(40, 40, 40);
-            doc.text('S/ ' + igv.toFixed(2), W - 15, y + 17, { align: 'right' });
-            doc.setDrawColor(180, 180, 180); doc.line(15, y + 21, W - 15, y + 21);
-            doc.setFontSize(12); doc.setTextColor(255, 107, 53); doc.text('TOTAL:', 15, y + 29);
-            doc.text('S/ ' + sub.toFixed(2), W - 15, y + 29, { align: 'right' });
-            y += 42; doc.setFontSize(8); doc.setTextColor(150, 150, 150);
-            doc.text('Gracias por su compra en PeruTec', W / 2, y, { align: 'center' });
-        });
-        if (carrito.length > 1) {
-            doc.addPage(); doc.setFillColor(255, 107, 53); doc.rect(0, 0, W, 38, 'F');
-            doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-            doc.text('PeruTec', 10, 13); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-            doc.text('RESUMEN DE COMPRA', 10, 26); doc.setTextColor(40, 40, 40); let y = 48;
-            doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-            doc.text('Productos: ' + carrito.length, 10, y); y += 10;
-            doc.text('Total general: S/ ' + totalG.toFixed(2), 10, y);
-        }
-        doc.save('boletas_perutec_' + Date.now() + '.pdf');
-        carrito = []; guardarCarrito(); renderCarrito();
-        bootstrap.Modal.getInstance(document.getElementById('modalCarrito'))?.hide();
-        alert('¡Compra realizada! Se descargaron las boletas en PDF.');
-    }
-
-    document.querySelector('#modalCompra form')?.addEventListener('submit', function() {
-        if (productoSeleccionado) agregarAlCarrito(productoSeleccionado);
-    });
-    document.getElementById('modalCarrito')?.addEventListener('show.bs.modal', renderCarrito);
-
-    (function init() {
-        cargarCarrito();
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('compra') === 'confirmada') {
-            alert('¡Compra confirmada con éxito!');
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        if (params.get('login') === '' || params.get('login') === 'true') {
-            const modalCuenta = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCuenta'));
-            modalCuenta.show();
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    })();
+    window.USUARIO_LOGUEADO_GLOBAL = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
 </script>
+<script th:src="@{/js/app.js}"></script>
 
 </body>
 </html>

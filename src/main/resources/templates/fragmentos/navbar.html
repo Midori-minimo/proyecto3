@@ -19,8 +19,8 @@
                aria-label="Buscar" oninput="buscarProductos(this.value)"/>
     </div>
     <div class="navbar-icons">
-        <a class="navbar-icon-btn" th:href="@{/celulares}" title="Celulares">
-            <i class="bi bi-search"></i>
+        <a class="navbar-icon-btn" sec:authorize="hasRole('ADMIN')" th:href="@{/admin}" title="Panel admin">
+            <i class="bi bi-speedometer2"></i>
         </a>
         <button class="navbar-icon-btn" type="button"
                 data-bs-toggle="modal" data-bs-target="#modalCarrito"

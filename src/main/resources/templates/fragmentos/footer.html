@@ -1,37 +1,197 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 
-<!-- grid -->
-<footer class="footer-perutec" th:fragment="footer">
-    <div class="container-app">
-        <div class="footer-grid">
-            <div>
-                <h6>Sobre nosotros</h6>
-                <a th:href="@{/inicio}">PeruTec</a>
-                <a th:href="@{/inicio#soporte}">Soporte</a>
-                <a th:href="@{/inicio#garantia}">Garantía</a>
-                <a th:href="@{/inicio#servicio}">Servicio al cliente</a>
+<!-- modal -->
+<div th:fragment="modales">
+
+    <!-- modal -->
+    <div class="modal fade modal-cuenta" id="modalCuenta" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--gradiente-principal); color:#fff;">
+                    <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Tu cuenta PeruTec</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-pills nav-fill mb-3" id="cuentaTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabLogin" type="button" role="tab">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabRegistro" type="button" role="tab">
+                                <i class="bi bi-person-plus me-1"></i>Crear cuenta
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabRecuperar" type="button" role="tab">
+                                <i class="bi bi-key me-1"></i>Recuperar
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tabLogin" role="tabpanel">
+                            <div class="alert alert-perutec info" th:if="${param.registrado}">
+                                <i class="bi bi-check-circle me-1"></i>Cuenta creada con éxito.
+                            </div>
+                            <div class="alert alert-perutec success" th:if="${param.recuperada}">
+                                <i class="bi bi-check-circle me-1"></i>Contraseña actualizada.
+                            </div>
+                            <div class="alert alert-perutec danger" th:if="${param.error}">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Correo o contraseña incorrectos.
+                            </div>
+                            <div class="alert alert-perutec warning" th:if="${param.requiereLogin}">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Debes iniciar sesión para comprar.
+                            </div>
+                            <div class="alert alert-perutec success" th:if="${param.login}">
+                                <i class="bi bi-check-circle me-1"></i>Sesión iniciada.
+                            </div>
+                            <form th:action="@{/login}" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Correo electrónico</label>
+                                    <input type="email" name="username" class="form-control"
+                                           placeholder="tucorreo@ejemplo.com" required/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Contraseña</label>
+                                    <input type="password" name="password" class="form-control" required/>
+                                </div>
+                                <button type="submit" class="btn-primario">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="tabRegistro" role="tabpanel">
+                            <form th:action="@{/registro}" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Nombre completo</label>
+                                    <input type="text" name="nombre" class="form-control" required placeholder="Ej: Mario Ayme"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Correo</label>
+                                    <input type="email" name="email" class="form-control" required placeholder="tucorreo@ejemplo.com"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Contraseña</label>
+                                    <input type="password" name="password" class="form-control" required minlength="6" placeholder="Mínimo 6 caracteres"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Confirmar contraseña</label>
+                                    <input type="password" name="confirmarPassword" class="form-control" required minlength="6"/>
+                                </div>
+                                <button type="submit" class="btn-primario">
+                                    <i class="bi bi-check-circle me-1"></i>Crear cuenta
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="tabRecuperar" role="tabpanel">
+                            <form th:action="@{/recuperar-password}" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Correo registrado</label>
+                                    <input type="email" name="email" class="form-control" required placeholder="tucorreo@ejemplo.com"/>
+                                </div>
+                                <button type="submit" class="btn-primario">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Continuar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <h6>Términos &amp; condiciones</h6>
-                <a th:href="@{/inicio#tc}">T&amp;C</a>
-                <a th:href="@{/inicio#terminos}">Términos &amp; condiciones</a>
-                <a th:href="@{/inicio#cuotas}">Cuotas sin intereses</a>
-            </div>
-            <div>
-                <h6>Síguenos en</h6>
-                <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
-                <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
-                <a href="https://tiktok.com" target="_blank" rel="noopener">TikTok</a>
-                <a href="https://twitter.com" target="_blank" rel="noopener">X (Twitter)</a>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            Copyright © 2026 PeruTec. Todos los derechos reservados · Perú / Español
         </div>
     </div>
-</footer>
+
+    <!-- modal -->
+    <div class="modal fade modal-compra" id="modalCompra" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-bag-check me-2"></i>Confirmar Compra</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/comprar}" method="post">
+                    <div class="modal-body">
+                        <p class="mb-1">¿Deseas comprar el siguiente producto?</p>
+                        <p class="fw-bold fs-5 text-primary" id="nombreProductoModal">—</p>
+                        <p class="text-muted">Precio: <span class="fw-bold text-dark" id="precioProductoModal">—</span></p>
+                        <input type="hidden" name="productoId" id="inputProductoId" value=""/>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn-primary-perutec">
+                            <i class="bi bi-check-circle me-1"></i>Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal -->
+    <div class="modal fade" id="modalCarrito" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--gradiente-principal); color:#fff;">
+                    <h5 class="modal-title"><i class="bi bi-cart3 me-2"></i>Mi Carrito</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="carritoBody"></div>
+                    <hr/>
+                    <div class="boleta-carrito" id="boletaCarrito" style="display:none;">
+                        <h6><i class="bi bi-receipt me-1"></i>BOLETA DE VENTA</h6>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Producto</th>
+                                <th class="text-end">P.U.</th>
+                                <th class="text-center">Cant.</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                            </thead>
+                            <tbody id="boletaItems"></tbody>
+                            <tfoot>
+                            <tr>
+                                <td colspan="3"></td>
+                                <td class="text-end">Subtotal (sin IGV):</td>
+                                <td class="text-end" id="boletaSubtotal">S/ 0.00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3"></td>
+                                <td class="text-end">IGV (18%):</td>
+                                <td class="text-end" id="boletaIgv">S/ 0.00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3"></td>
+                                <td class="text-end">TOTAL:</td>
+                                <td class="text-end" id="boletaTotal">S/ 0.00</td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer flex-column align-items-stretch" id="carritoFooter" style="display:none;">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="button" class="btn btn-outline-secondary flex-grow-1" onclick="vaciarCarrito()">
+                            <i class="bi bi-trash3 me-1"></i>Vaciar carrito
+                        </button>
+                        <button type="button" class="btn btn-success flex-grow-1" onclick="finalizarCompraCarrito()">
+                            <i class="bi bi-bag-check me-1"></i>Finalizar compra y descargar boleta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 </body>
 </html>
