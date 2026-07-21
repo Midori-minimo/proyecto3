@@ -24,8 +24,9 @@ public class ConfiguracionSeguridad {
                                 "/", "/inicio", "/celulares", "/tablets", "/wearables",
                                 "/login", "/registro", "/recuperar-password",
                                 "/css/**", "/js/**", "/img/**", "/webjars/**",
-                                "/error"
+                                "/error", "/api/productos/**"
                         ).permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/comprar", "/logout").authenticated()
                         .anyRequest().permitAll()
                 )

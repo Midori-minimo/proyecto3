@@ -4,10 +4,6 @@ import com.proyecto3.proyecto3.modelo.Usuario;
 import com.proyecto3.proyecto3.repositorio.UsuarioRepositorio;
 import com.proyecto3.proyecto3.seguridad.UsuarioDetalles;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -36,7 +32,7 @@ public class AuthControlador {
 
     @GetMapping("/registro")
     public String mostrarRegistro() {
-        return "redirect:/inicio#abrir-cuenta";
+        return "registro";
     }
 
     @PostMapping("/registro")

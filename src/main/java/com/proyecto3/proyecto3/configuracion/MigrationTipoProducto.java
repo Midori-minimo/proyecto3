@@ -24,14 +24,12 @@ public class MigrationTipoProducto implements CommandLineRunner {
         List<Producto> productos = productoRepositorio.findAll();
         int actualizados = 0;
 
-        /* lambda stream */
         long sinTipo = productos.stream().filter(p -> p.getTipo() == null).count();
         if (sinTipo == 0) {
             System.out.println("DEBUG >> Migración tipo: todos los productos ya tienen tipo, omitiendo.");
             return;
         }
 
-        /* lambda stream */
         for (Producto p : productos) {
             boolean cambio = false;
             if (p.getTipo() == null) {
@@ -45,7 +43,6 @@ public class MigrationTipoProducto implements CommandLineRunner {
             if (cambio) {
                 productoRepositorio.save(p);
                 actualizados++;
-                System.out.println("DEBUG >> Migración tipo: '" + p.getNombre() + "' -> tipo=" + p.getTipo() + " marca=" + p.getMarca());
             }
         }
         System.out.println("DEBUG >> Migración tipo: " + actualizados + " producto(s) actualizado(s).");
